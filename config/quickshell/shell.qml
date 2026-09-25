@@ -460,6 +460,31 @@ ShellRoot {
         }
     }
 
+    property var cavaBars: []
+    readonly property bool musicPlaying: player !== null
+
+    Process {
+        id: cavaProc
+        running: root.musicPlaying
+        command: ["sh", "-c",
+            "mkdir -p \"$HOME/.cache/quickshell\"; cat > \"$HOME/.cache/quickshell/cava.conf\" <<'EOF'\n" +
+            "[general]\nbars = 48\nframerate = 60\n\n" +
+            "[output]\nmethod = raw\nraw_target = /dev/stdout\ndata_format = ascii\nascii_max_range = 100\nbar_delimiter = 59\nframe_delimiter = 10\nEOF\n" +
+            "exec cava -p \"$HOME/.cache/quickshell/cava.conf\""
+        ]
+        stdout: SplitParser {
+            onRead: line => {
+                const vals = line.split(";").filter(s => s.length > 0).map(Number)
+                if (vals.length > 0)
+                    root.cavaBars = vals
+            }
+        }
+        onRunningChanged: {
+            if (!running)
+                root.cavaBars = []
+        }
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -588,197 +613,228 @@ ShellRoot {
                     opacity: Math.max(0, 1 - island.p * 3)
                     enabled: !island.notifying
 
-                    Row {
-                        id: wsRow
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 4
+                    readonly property bool expanded: island.expanded
+                    readonly property bool showMusic: !expanded && root.player !== null
+                    readonly property string musicText: root.player ? "\uf001 " + root.player.trackTitle + (root.player.trackArtist ? " - " + root.player.trackArtist : "") : ""
+                    readonly property real slotW: expanded ? Math.max(sideLeft.implicitWidth, sideRight.implicitWidth) : 0
 
-                        Repeater {
-                            model: 4
+                    Item {
+                        id: leftSlot
+                        Layout.preferredWidth: content.slotW
+                        Layout.fillHeight: true
+                        clip: true
 
-                            Rectangle {
-                                id: ws
-                                required property int index
-                                readonly property int wsId: index + 1
-                                readonly property bool active: Hyprland.focusedWorkspace !== null && Hyprland.focusedWorkspace.id === wsId
+                        Behavior on Layout.preferredWidth {
+                            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                        }
 
-                                implicitWidth: active ? label.implicitWidth + 14 : 20
-                                implicitHeight: 20
-                                radius: implicitHeight / 2
-                                color: active ? Qt.alpha(root.barMain, 0.26) : Qt.alpha(root.barFg, 0.07)
+                        RowLayout {
+                            id: sideLeft
+                            anchors.right: parent.right
+                            anchors.rightMargin: 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 5
+                            opacity: content.expanded ? 1 : 0
+                            visible: content.expanded || opacity > 0
 
-                                Behavior on implicitWidth {
-                                    NumberAnimation { duration: 220; easing.type: Easing.OutExpo }
-                                }
-                                Behavior on color {
-                                    ColorAnimation { duration: 200 }
-                                }
+                            Behavior on opacity {
+                                NumberAnimation { duration: 180 }
+                            }
 
-                                Text {
-                                    id: label
-                                    anchors.centerIn: parent
-                                    text: ws.wsId
-                                    color: ws.active ? root.emph(root.barMain, 1.4) : Qt.alpha(root.barFg, 0.45)
-                                    font.family: root.textFont
-                                    font.pixelSize: 11
-                                    font.bold: ws.active
+                            Row {
+                                id: wsRow
+                                Layout.alignment: Qt.AlignVCenter
+                                spacing: 3
 
-                                    Behavior on color {
-                                        ColorAnimation { duration: 200 }
+                                Repeater {
+                                    model: 4
+
+                                    Rectangle {
+                                        id: ws
+                                        required property int index
+                                        readonly property int wsId: index + 1
+                                        readonly property bool active: Hyprland.focusedWorkspace !== null && Hyprland.focusedWorkspace.id === wsId
+
+                                        implicitWidth: active ? label.implicitWidth + 12 : 18
+                                        implicitHeight: 18
+                                        radius: implicitHeight / 2
+                                        color: active ? Qt.alpha(root.barMain, 0.26) : Qt.alpha(root.barFg, 0.07)
+
+                                        Behavior on implicitWidth {
+                                            NumberAnimation { duration: 220; easing.type: Easing.OutExpo }
+                                        }
+                                        Behavior on color {
+                                            ColorAnimation { duration: 200 }
+                                        }
+
+                                        Text {
+                                            id: label
+                                            anchors.centerIn: parent
+                                            text: ws.wsId
+                                            color: ws.active ? root.emph(root.barMain, 1.4) : Qt.alpha(root.barFg, 0.45)
+                                            font.family: root.textFont
+                                            font.pixelSize: 10
+                                            font.bold: ws.active
+
+                                            Behavior on color {
+                                                ColorAnimation { duration: 200 }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: parent.radius
+                                            color: root.barFg
+                                            opacity: wsArea.containsMouse && !ws.active ? 0.06 : 0
+
+                                            Behavior on opacity {
+                                                NumberAnimation { duration: 120 }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: wsArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + ws.wsId + " })")
+                                        }
                                     }
                                 }
+                            }
+                            
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: parent.radius
-                                    color: root.barFg
-                                    opacity: wsArea.containsMouse && !ws.active ? 0.06 : 0
-
-                                    Behavior on opacity {
-                                        NumberAnimation { duration: 120 }
-                                    }
-                                }
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: Qt.formatDateTime(clock.date, "d MMM")
+                                color: Qt.alpha(root.barFg, 0.7)
+                                font.family: root.textFont
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: "\uebf3"
+                                color: root.dashboardOpen ? root.emph(root.barMain, 1.25) : Qt.alpha(root.barFg, 0.5)
+                                font.family: root.textFont
+                                font.pixelSize: 14
 
                                 MouseArea {
-                                    id: wsArea
                                     anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + ws.wsId + " })")
+                                    anchors.margins: -4
+                                    onClicked: root.dashboardOpen = !root.dashboardOpen
+                                }
+                            }
+
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: root.notch ? "\uf2d0" : "\uf2d2"
+                                color: Qt.alpha(root.barFg, 0.5)
+                                font.family: root.textFont
+                                font.pixelSize: 12
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    onClicked: root.barStyle = root.notch ? "dynamic" : "notch"
                                 }
                             }
                         }
                     }
+
+
 
                     Text {
+                        id: centerText
                         Layout.alignment: Qt.AlignVCenter
-                        text: Qt.formatDateTime(clock.date, "HH:mm")
-                        color: root.emph(root.barMain, 1.25)
-                        font.family: root.clockFont
-                        font.pixelSize: 14
+                        width: Math.min(implicitWidth, content.showMusic ? 200 : 999)
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        text: content.showMusic ? content.musicText : Qt.formatDateTime(clock.date, "HH:mm")
+                        color: content.showMusic ? Qt.alpha(root.barFg, 0.85) : root.emph(root.barMain, 1.25)
+                        font.family: content.showMusic ? root.textFont : root.clockFont
+                        font.pixelSize: content.showMusic ? 12 : 14
                         font.bold: true
+
+                        Behavior on color { ColorAnimation { duration: 200 } }
                     }
 
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        text: Qt.formatDateTime(clock.date, "ddd d MMM")
-                        color: Qt.alpha(root.barFg, 0.75)
-                        font.family: root.textFont
-                        font.pixelSize: 12
-                        font.bold: true
-                    }
+                    Item {
+                        id: rightSlot
+                        Layout.preferredWidth: content.slotW
+                        Layout.fillHeight: true
+                        clip: true
 
-                    RowLayout {
-                        id: extras
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 10
-                        opacity: island.expanded ? 1 : 0
-                        visible: island.expanded || opacity > 0
-
-                        Behavior on opacity {
-                            NumberAnimation { duration: 180 }
+                        Behavior on Layout.preferredWidth {
+                            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                         }
 
-                        Rectangle {
-                            Layout.alignment: Qt.AlignVCenter
-                            width: 1
-                            height: 12
-                            color: Qt.alpha(root.barFg, 0.18)
-                        }
+                        RowLayout {
+                            id: sideRight
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 6
+                            opacity: content.expanded ? 1 : 0
+                            visible: content.expanded || opacity > 0
 
-                        Text {
-                            Layout.alignment: Qt.AlignVCenter
-                            Layout.maximumWidth: 160
-                            visible: root.player !== null
-                            elide: Text.ElideRight
-                            text: root.player ? "\uf001 " + root.player.trackTitle + (root.player.trackArtist ? " - " + root.player.trackArtist : "") : ""
-                            color: Qt.alpha(root.barFg, 0.85)
-                            font.family: root.textFont
-                            font.pixelSize: 12
-                            font.bold: true
-                        }
-
-                        Text {
-                            Layout.alignment: Qt.AlignVCenter
-                            text: "\uebf3"
-                            color: root.dashboardOpen ? root.emph(root.barMain, 1.25) : Qt.alpha(root.barFg, 0.5)
-                            font.family: root.textFont
-                            font.pixelSize: 12
-
-                            MouseArea {
-                                anchors.fill: parent
-                                anchors.margins: -4
-                                onClicked: root.dashboardOpen = !root.dashboardOpen
+                            Behavior on opacity {
+                                NumberAnimation { duration: 180 }
                             }
-                        }
 
-                        Text {
-                            Layout.alignment: Qt.AlignVCenter
-                            text: root.notch ? "\uf2d0" : "\uf2d2"
-                            color: Qt.alpha(root.barFg, 0.5)
-                            font.family: root.textFont
-                            font.pixelSize: 12
+                            Text {
+                                id: audioLabel
+                                readonly property var audio: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
 
-                            MouseArea {
-                                anchors.fill: parent
-                                anchors.margins: -4
-                                onClicked: root.barStyle = root.notch ? "dynamic" : "notch"
-                            }
-                        }
+                                Layout.alignment: Qt.AlignVCenter
+                                text: !audio ? "" : (audio.muted ? "\uf6a9" : (audio.volume < 0.34 ? "\uf026" : audio.volume < 0.67 ? "\uf027" : "\uf028") + " " + Math.round(audio.volume * 100) + "%")
+                                color: audio && audio.muted ? root.accent : root.barFg
+                                font.family: root.textFont
+                                font.pixelSize: 12
+                                font.bold: true
 
-                        Text {
-                            id: audioLabel
-                            readonly property var audio: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
-
-                            Layout.alignment: Qt.AlignVCenter
-                            text: !audio ? "" : (audio.muted ? "\uf6a9 muted" : (audio.volume < 0.34 ? "\uf026" : audio.volume < 0.67 ? "\uf027" : "\uf028") + " " + Math.round(audio.volume * 100) + "%")
-                            color: audio && audio.muted ? root.accent : root.barFg
-                            font.family: root.textFont
-                            font.pixelSize: 12
-                            font.bold: true
-
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                onClicked: mouse => {
-                                    if (mouse.button === Qt.RightButton)
-                                        Quickshell.execDetached(["pavucontrol"])
-                                    else if (audioLabel.audio)
-                                        audioLabel.audio.muted = !audioLabel.audio.muted
-                                }
-                                onWheel: wheel => {
-                                    if (audioLabel.audio)
-                                        audioLabel.audio.volume = Math.max(0, Math.min(1, audioLabel.audio.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05)))
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    onClicked: mouse => {
+                                        if (mouse.button === Qt.RightButton)
+                                            Quickshell.execDetached(["pavucontrol"])
+                                        else if (audioLabel.audio)
+                                            audioLabel.audio.muted = !audioLabel.audio.muted
+                                    }
+                                    onWheel: wheel => {
+                                        if (audioLabel.audio)
+                                            audioLabel.audio.volume = Math.max(0, Math.min(1, audioLabel.audio.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05)))
+                                    }
                                 }
                             }
-                        }
 
-                        Text {
-                            Layout.alignment: Qt.AlignVCenter
-                            Layout.maximumWidth: 110
-                            elide: Text.ElideRight
-                            text: root.netType === "" ? "\uf127 offline" : (root.netType === "wifi" ? "\uf1eb " : "\uf796 ") + root.netName
-                            color: root.netType === "" ? root.accent : root.barFg
-                            font.family: root.textFont
-                            font.pixelSize: 12
-                            font.bold: true
-                        }
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.maximumWidth: 70
+                                elide: Text.ElideRight
+                                text: root.netType === "" ? "\uf127" : (root.netType === "wifi" ? "\uf1eb" : "\uf796")
+                                color: root.netType === "" ? root.accent : root.barFg
+                                font.family: root.textFont
+                                font.pixelSize: 12
+                                font.bold: true
+                            }
 
-                        Text {
-                            Layout.alignment: Qt.AlignVCenter
-                            text: "\uf2db " + root.cpu + "%"
-                            color: root.barFg
-                            font.family: root.textFont
-                            font.pixelSize: 12
-                            font.bold: true
-                        }
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: "\uf2db " + root.cpu + "%"
+                                color: root.barFg
+                                font.family: root.textFont
+                                font.pixelSize: 12
+                                font.bold: true
+                            }
 
-                        Text {
-                            Layout.alignment: Qt.AlignVCenter
-                            text: "\uf538 " + root.mem + "%"
-                            color: root.barFg
-                            font.family: root.textFont
-                            font.pixelSize: 12
-                            font.bold: true
+                            Text {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: "\uf538 " + root.mem + "%"
+                                color: root.barFg
+                                font.family: root.textFont
+                                font.pixelSize: 12
+                                font.bold: true
+                            }
                         }
                     }
                 }

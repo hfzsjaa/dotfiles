@@ -3,16 +3,6 @@
 My Arch Linux / Hyprland configuration.
 
 Currently using:
-
-Screenshots:
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/06aa78ca-090b-49d7-a4bc-12f49a255966" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/01a4d1a6-8621-4d32-8d80-1119605b5253" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/4a5f6f7a-574a-4677-ae53-ad18bcfa51c9" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/65bc4a70-905c-41f3-b196-34a927c8b439" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/249a252c-84df-4bab-869d-7625297a87b1" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/371d31db-f5dd-4e9c-b787-afcabe03cf63" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/c2081d9e-59c5-406d-83cd-21579f8ced61" />
-
 * Hyprland
 * QuickShell
 * Kitty
@@ -22,6 +12,17 @@ Screenshots:
 * Cava
 * Pywal
 * Brave
+* 
+Screenshots:
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/06aa78ca-090b-49d7-a4bc-12f49a255966" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/01a4d1a6-8621-4d32-8d80-1119605b5253" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/4a5f6f7a-574a-4677-ae53-ad18bcfa51c9" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/65bc4a70-905c-41f3-b196-34a927c8b439" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/249a252c-84df-4bab-869d-7625297a87b1" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/371d31db-f5dd-4e9c-b787-afcabe03cf63" />
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/c2081d9e-59c5-406d-83cd-21579f8ced61" />
+
+
 
 ## Structure
 

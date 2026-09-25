@@ -1,0 +1,23 @@
+/**
+ * Warna ini di-generate ulang otomatis oleh pywal setiap kali kamu
+ * menjalankan `wal -i <wallpaper>`, karena file ini adalah template.
+ * Simpan di: ~/.config/wal/templates/colors-rofi.rasi
+ */
+* {
+    background:            {background}ee;
+    background-alt:        {color0}cc;
+    foreground:             {foreground};
+    foreground-alt:         {color7};
+    selected-background:    {color4}55;
+    selected-foreground:    {foreground};
+    input-background:       {color0}aa;
+    border-color:           {color4}aa;
+    urgent:                 {color1};
+
+    /* Alias wajib -- theme bawaan rofi (bagian yang tidak kita override,
+     * seperti "message", "error-message", "prompt") mereferensikan nama
+     * variabel generik ini secara langsung. Tanpa ini, rofi akan gagal
+     * validasi theme meski secara visual sebagian besar tetap jalan. */
+    selected:               {color4};
+    active:                 {color2};
+}

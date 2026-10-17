@@ -1,0 +1,8 @@
+lyse
+peaclock
+python-pywal16
+spotatui-bin
+spotify-adblock
+vscodium-bin
+yay
+yay-debug

@@ -1,0 +1,6 @@
+require("hyprland.binds")
+require("hyprland.decoration")
+require("hyprland.devices")
+require("hyprland.system")
+require("hyprland.window")
+require("hyprland.canvas")
